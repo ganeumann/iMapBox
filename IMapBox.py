@@ -53,11 +53,30 @@ def getParts(unparsed,obj):
 	year,month,day,hour,minute,seconds,x,x,dst = email.utils.parsedate(obj.parts['date'])
 	obj.parts['date'] = datetime.date(year,month,day)
 	obj.parts['time'] = datetime.time(hour, minute, seconds)
+	
+	# parse email addresses
+	obj.parts['to']=splitAddrList(obj.parts['to'])
+	obj.parts['from']=splitAddrList(obj.parts['from'])
+	obj.parts['cc']=splitAddrList(obj.parts['cc'])
 		
 	# set attachment?--how to know if there is an attachment?
 	# self.parts['attachment?'] = False
 	# if ????:
 	#	self.parts['attachment?'] = True
+
+def splitAddrList(s):
+	#split an address list into list of tuples of (name,address)
+	if not(s): return []
+	outQ = True
+	cut = -1
+	res = []
+	for i in range(len(s)):
+		if s[i]=='"': outQ = not(outQ)
+		if outQ and s[i]==',':
+			res.append(email.utils.parseaddr(s[cut+1:i]))
+			cut=i
+	res.append(email.utils.parseaddr(s[cut+1:i+1]))
+	return res
 
 class IMapBox(object):
 	"""Opens an IMAP account.
@@ -249,8 +268,13 @@ class BoxMsg(object):
 	   - date: returns date sent
 	   - time: returns time sent
 	   - subject: returns subject
-	   - text: returns text"""	   
+	   - text: returns text	   
 #	   - attachment?: returns True if attachment, otherwise False -- Not Yet Implemented
+#	Dict-like methods: .get(), .values(), .keys(), .items()
+#	   - __keys__: returns list of msgids
+#	   - __items__: returns list of Msg objects
+#	   - __contains__(msgid): return True/False for msgid in box
+	   - get(x,y): __getitem__(x) or y if no x"""
 	
 	def __init__(self,msgbox,msgid):
 		self.svr = msgbox.svr
@@ -272,3 +296,10 @@ class BoxMsg(object):
 			self.parts['text']=txt[1][0][1]
 			self.txt_fetched = True			
 		return self.parts[part]
+
+	def get(self,part,deflt):
+		try:
+			a = self.__getitem__(part)
+		except KeyError:
+			return deflt
+		return a or deflt
