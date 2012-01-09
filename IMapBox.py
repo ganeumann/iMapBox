@@ -152,16 +152,19 @@ class MsgBox(object):
 		
 		# fetch all msgs in self.msglist at once
 		# for each message, parse it and load parts into BoxMsgs
+		
+		#! Need to fix because priority effects knowing whether or not a message is already fetched
+		
 		notftchd = [i for i in self.msglist.keys() if not self.msglist[i].hdr_fetched]
 		ftchlist = ",".join(notftchd)
 		if ftchlist:
 			if self.priority == 'all':
-				self.ftchtype = '(BODY.PEEK[])'
+				ftchtype = '(BODY.PEEK[])'
 			elif self.priority == 'headers':
-				self.ftchtype = '(BODY.PEEK[HEADER])'
+				ftchtype = '(BODY.PEEK[HEADER])'
 			else:
-				self.ftchtype = '(BODY.PEEK[TEXT])'
-			ftchd = self.svr.fetch(ftchlist,self.ftchtype)
+				ftchtype = '(BODY.PEEK[TEXT])'
+			ftchd = self.svr.fetch(ftchlist,ftchtype)
 			ftchdmsgs = ftchd[1][0::2]
 			for msg in ftchdmsgs:
 				m1,m2=msg
